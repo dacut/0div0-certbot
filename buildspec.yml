@@ -1,0 +1,25 @@
+version: 0.1
+
+environment_variables:
+  plaintext:
+    IMAGE_TAG_FILE: "codebuild/artifacts/image-tag"
+    CFN_PARAM_FILE: "codebuild/artifacts/deploy-params.json"
+    ACCOUNT_ID_FILE: "/tmp/aws-account-id"
+phases:
+  install:
+    commands:
+      - chmod ugo+x ./codebuild/run-phase
+      - ./codebuild/run-phase install
+  pre_build:
+    commands:
+      - ./codebuild/run-phase pre_build
+  build:
+    commands:
+      - ./codebuild/run-phase build
+  post_build:
+    commands:
+      - ./codebuild/run-phase post_build
+artifacts:
+  files:
+    - "*"
+  base-directory: codebuild/artifacts

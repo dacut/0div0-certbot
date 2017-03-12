@@ -1,0 +1,79 @@
+#!/bin/bash
+
+install () {
+  echo Logging in to Amazon ECR
+  $(aws ecr get-login --region $AWS_DEFAULT_REGION)
+
+  # Make other executables executable
+  chmod ugo+x ./codebuild/clear-stale-images || return 1
+  chmod ugo+x ./certbot-runner || return 
+
+  # Create the artifact directory
+  mkdir -p ./codebuild/artifacts || return 1
+
+  # Write the build timestamp
+  IMAGE_TAG=$(TZ=UTC date '+%Y%m%d%H%M%S') || return 1
+  echo $IMAGE_TAG > $IMAGE_TAG_FILE || return 1
+
+  return 0;
+}
+
+pre_build () {
+  return 0;
+}
+
+build () {
+  echo Build started on $(date)
+  echo Building Docker image
+  docker build --tag $IMAGE_NAME:latest . || return 1
+  docker tag $IMAGE_NAME:latest ${ECR_REPOSITORY}:latest || return 1
+  docker tag $IMAGE_NAME:latest ${ECR_REPOSITORY}:$IMAGE_TAG || return 1
+}
+
+post_build () {
+  echo Build completed on $(date)
+  echo Pushing Docker image
+  docker push ${ECR_REPOSITORY}:latest || return 1
+  docker push ${ECR_REPOSITORY}:$IMAGE_TAG || return 1
+
+  echo Generating CloudFormation parameter file
+  cat > $CFN_PARAM_FILE <<.EOF
+{
+  "Parameters": {
+    "CertbotImage": "${ECR_REPOSITORY}:$IMAGE_TAG"
+  }
+}
+.EOF
+  if [[ $? -ne 0 ]]; then return 1; fi;
+
+  # Remove old images -- this isn't critical, so a failure is acceptable.
+  echo Removing old images
+  ./codebuild/clear-stale-images $IMAGE_NAME || true
+}
+
+# Extract the account number from CODEBUILD_BUILD_ARN, in the format:
+# arn:aws:codebuild:<region>:<account>:build/...
+ACCOUNT_ID=$(echo "$CODEBUILD_BUILD_ARN" | sed -e 's/arn:aws:codebuild:[^:]*://' -e 's/:.*//')
+
+# Docker repository in ECR
+ECR_REPOSITORY=$ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_NAME
+
+# Use a consistent image tag.
+if [[ -r $IMAGE_TAG_FILE ]]; then
+  IMAGE_TAG=$(cat $IMAGE_TAG_FILE)
+fi;
+
+if [[ $# -eq 0 || $# -gt 1 ]]; then
+  echo "Usage: run-phase <phase-name>" 1>&2;
+  exit 2;
+fi;
+
+case $1 in
+  install ) install;;
+  pre_build ) pre_build;;
+  build ) build;;
+  post_build ) post_build;;
+  * ) echo "Unknown phase $1; must be one of install, pre_build, build, or post_build" 1>&2;;
+esac;
+
+exit $?

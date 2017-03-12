@@ -1,0 +1,110 @@
+#!/usr/bin/env python
+from __future__ import absolute_import, print_function
+import boto3
+from getopt import getopt, GetoptError
+import logging
+from sys import argv, exit, stderr, stdout
+
+ecr = boto3.client("ecr")
+log = logging.getLogger()
+
+def delete_old_images(repository_name, images_to_keep=10):
+    kw = {"repositoryName": repository_name}
+    all_images = []
+
+    while True:
+        result = ecr.list_images(**kw)
+        image_ids = result.get("imageIds", [])
+        for image_id in image_ids:
+            image_tag = image_id.get("imageTag")
+            if image_tag.isdigit():
+                all_images.append(image_id)
+
+        token = result.get("nextToken")
+        if not token:
+            break
+
+        kw["nextToken"] = token
+
+    # Sort from oldest to newest
+    all_images.sort(key=lambda el: int(el["imageTag"]), reverse=True)
+
+    # Trim off the ones we want to keep
+    all_images = all_images[:-images_to_keep]
+
+    failure_seen = False
+
+    for i in xrange(0, len(all_images), 100):
+        result = ecr.batch_delete_images(
+            imageIds=all_images[i:i+100], repositoryName=repository_name)
+
+        failures = result.get("failures", [])
+        for failure in failures:
+            image_tag = failure["imageId"]["imageTag"]
+            failure_code = failure["failureCode"]
+            failure_reason = failure.get("failureReason", "")
+            if failure_reason:
+                failure_reason = ": " + failure_reason
+            log.error("Failed to delete image tag %s: %s%s", image_tag,
+                      failure_code, failure_reason)
+
+            failure_seen = True
+
+    return 1 if failure_seen else 0
+
+def main(args):
+    keep = 10
+
+    try:
+        opts, args = getopt(args, "hk:", ["help", "keep="])
+    except GetoptError as e:
+        print(str(e), file=stderr)
+        usage()
+        return 2
+
+    for opt, val in opts:
+        if opt in ("-h", "--help"):
+            usage(stdout)
+            return 0
+        elif opt in ("-k", "--keep"):
+            try:
+                keep = int(val)
+                if keep < 0:
+                    raise ValueError()
+            except ValueError:
+                print("Invalid argument for %s: Must be an integer >= 0",
+                      file=stderr)
+                usage()
+                return 2
+
+    if len(args) == 0:
+        print("Missing repository-name", file=stderr)
+        usage()
+        return 2
+    elif len(args) > 1:
+        print("Unknown argument %s" % args[1], file=stderr)
+        usage()
+        return 2
+
+    repository_name = args[0]
+
+    logging.basicConfig(format="%(levelname)s %(message)s", stream=stderr)
+    return delete_old_images(repository_name, keep)
+
+def usage(fd=stderr):
+    fd.write("""\
+Usage: clear-stale-images [options] <repository-name>
+Remove old timestamped images from an ECR repository.
+
+Options:
+    -h | --help
+        Show this usage information.
+
+    -k <keep> | --keep=<keep>
+        Number of most recent images to keep. Defaults to 10.
+""")
+    fd.flush()
+    return
+
+if __name__ == "__main__":
+    exit(main(argv[1:]))

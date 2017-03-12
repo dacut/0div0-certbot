@@ -1,0 +1,11 @@
+#!/bin/bash
+while true; do
+  if [[ ! -f /etc/letsencrypt/dhparam.pem ]]; then
+    openssl dhparam -dsparam 4096 -out /etc/letsencrypt/dhparam.pem;
+  fi;
+
+  certbot certonly -n --agree-tos --email dacut+zdzops@kanga.org \
+  --authenticator certbot-route53:auth \
+  --domains 0div0.com,www.0div0.com,backend.0div0.com
+  sleep 86400 # 1 day
+done;
