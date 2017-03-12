@@ -1,7 +1,7 @@
 #!/bin/bash
 while true; do
   if [[ ! -f /etc/letsencrypt/dhparam.pem ]]; then
-    openssl dhparam -dsparam 4096 -out /etc/letsencrypt/dhparam.pem;
+    openssl dhparam -dsaparam 4096 -out /etc/letsencrypt/dhparam.pem;
   fi;
 
   certbot certonly -n --agree-tos --email dacut+zdzops@kanga.org \
