@@ -1,0 +1,23 @@
+- !Assembly Parameters:
+    CertbotImage:
+      Type: String
+      Description: The image to use to launch the Certbot container.
+      Default: "252932775772.dkr.ecr.us-west-2.amazonaws.com/0div0-nginx:latest"
+    CertbotMemoryReservation:
+      Type: Number
+      Description: The amount of memory, in MiB, to reserve for the Certbot container.
+      Default: 24
+- !Assembly ContainerParameters:
+    - CertbotImage
+    - CertbotMemoryReservation
+- !Assembly Container:
+    - # Certbot renewal container
+      DisableNetworking: false
+      Essential: true
+      Image: !Ref CertbotImage
+      MemoryReservation: !Ref CertbotMemoryReservation
+      MountPoints:
+        - ContainerPath: /etc/letsencrypt
+          SourceVolume: letsencrypt
+      Name: 0div0-certbot
+      WorkingDirectory: /
