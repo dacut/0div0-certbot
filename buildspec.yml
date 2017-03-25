@@ -3,7 +3,7 @@ version: 0.1
 environment_variables:
   plaintext:
     IMAGE_TAG_FILE: "codebuild/artifacts/image-tag"
-    CFN_PARAM_FILE: "codebuild/artifacts/deploy-params.json"
+    CFN_PARAM_FILE: "codebuild/artifacts/cfn-params.yml"
     ACCOUNT_ID_FILE: "/tmp/aws-account-id"
 phases:
   install:

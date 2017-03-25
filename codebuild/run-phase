@@ -6,7 +6,7 @@ install () {
 
   # Make other executables executable
   chmod ugo+x ./codebuild/clear-stale-images || return 1
-  chmod ugo+x ./certbot-runner || return 
+  chmod ugo+x ./certbot-runner || return 1
 
   # Create the artifact directory
   mkdir -p ./codebuild/artifacts || return 1
@@ -38,11 +38,8 @@ post_build () {
 
   echo Generating CloudFormation parameter file
   cat > $CFN_PARAM_FILE <<.EOF
-{
-  "Parameters": {
-    "CertbotImage": "${ECR_REPOSITORY}:$IMAGE_TAG"
-  }
-}
+!Assembly Parameters:
+  CertbotImage: "${ECR_REPOSITORY}:$IMAGE_TAG"
 .EOF
   if [[ $? -ne 0 ]]; then return 1; fi;
 
