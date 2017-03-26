@@ -5,7 +5,7 @@ RUN sed -e 's/archive.ubuntu.com/dctddvrerm64v.cloudfront.net/g' /etc/apt/source
 RUN apt-get update -y
 RUN apt-get install -y build-essential libffi-dev libssl-dev python python-dev \
   python-pip
-RUN pip install certbot certbot-route53
+RUN pip install awscli certbot certbot-route53
 RUN mkdir -p /etc/letsencrypt
 RUN ls -r /etc/letsencrypt
 VOLUME ["/etc/letsencrypt"]

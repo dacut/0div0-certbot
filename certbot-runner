@@ -7,5 +7,16 @@ while true; do
   certbot certonly -n --agree-tos --email dacut+zdzops@kanga.org \
   --authenticator certbot-route53:auth \
   --domains 0div0.com,www.0div0.com,backend.0div0.com
+  certbot certonly -n --agree-tos --email dacut@zdzops@kanga.org \
+  --authenticator certbot-route53:auth \
+  --domains localdev.0div0.com
+  aws s3 cp /etc/letsencrypt/live/localdev.0div0.com/cert.pem \
+    s3://0div0-config/letsencrypt/localdev.0div0.com/cert.pem
+  aws s3 cp /etc/letsencrypt/live/localdev.0div0.com/chain.pem \
+    s3://0div0-config/letsencrypt/localdev.0div0.com/chain.pem
+  aws s3 cp /etc/letsencrypt/live/localdev.0div0.com/fullchain.pem \
+    s3://0div0-config/letsencrypt/localdev.0div0.com/fullchain.pem
+  aws s3 cp /etc/letsencrypt/live/localdev.0div0.com/privkey.pem \
+    s3://0div0-config/letsencrypt/localdev.0div0.com/privkey.pem
   sleep 86400 # 1 day
 done;
