@@ -18,5 +18,13 @@ while true; do
     s3://0div0-config/letsencrypt/localdev.0div0.com/fullchain.pem
   aws s3 cp /etc/letsencrypt/live/localdev.0div0.com/privkey.pem \
     s3://0div0-config/letsencrypt/localdev.0div0.com/privkey.pem
+  aws s3 cp /etc/letsencrypt/live/localdev.zerodivzero.com/cert.pem \
+    s3://0div0-config/letsencrypt/localdev.zerodivzero.com/cert.pem
+  aws s3 cp /etc/letsencrypt/live/localdev.zerodivzero.com/chain.pem \
+    s3://0div0-config/letsencrypt/localdev.zerodivzero.com/chain.pem
+  aws s3 cp /etc/letsencrypt/live/localdev.zerodivzero.com/fullchain.pem \
+    s3://0div0-config/letsencrypt/localdev.zerodivzero.com/fullchain.pem
+  aws s3 cp /etc/letsencrypt/live/localdev.zerodivzero.com/privkey.pem \
+    s3://0div0-config/letsencrypt/localdev.zerodivzero.com/privkey.pem
   sleep 86400 # 1 day
 done;
